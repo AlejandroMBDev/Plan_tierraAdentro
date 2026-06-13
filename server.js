@@ -7,9 +7,11 @@ const PORT = process.env.PORT || 3000;
 const STATE_FILE = path.join(__dirname, 'state.json');
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Leer estado
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.get('/state', (req, res) => {
   try {
     if (!fs.existsSync(STATE_FILE)) {
@@ -22,7 +24,6 @@ app.get('/state', (req, res) => {
   }
 });
 
-// Guardar estado
 app.post('/state', (req, res) => {
   try {
     const { states, comments } = req.body;
