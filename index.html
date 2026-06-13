@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tierra Adentro — Plan de Acción</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#F5F0E8;--parchment:#EDE6D6;--bark:#C4A882;--earth:#8B6F47;
+    --moss:#4A6741;--forest:#2D4A28;--ink:#1E1A14;--muted:#7A7060;
+    --done-bg:#EAF3DE;--done-text:#3B6D11;
+    --prog-bg:#E6F1FB;--prog-text:#185FA5;
+    --blk-bg:#FCEBEB;--blk-text:#A32D2D;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Instrument Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+
+  /* HEADER */
+  header{background:var(--forest);padding:22px 32px 20px;position:sticky;top:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    border-bottom:2px solid var(--moss)}
+  .header-left h1{font-family:'DM Serif Display',serif;font-size:21px;color:var(--cream)}
+  .header-left p{font-size:11px;color:var(--bark);font-family:'DM Mono',monospace;margin-top:2px}
+  .header-stats{display:flex;gap:20px;align-items:center}
+  .stat{text-align:center}
+  .stat-num{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--cream);line-height:1}
+  .stat-label{font-size:10px;color:var(--bark);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  .global-bar-wrap{width:130px}
+  .global-bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--bark);
+    font-family:'DM Mono',monospace;margin-bottom:4px}
+  .global-bar{height:6px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden}
+  .global-bar-fill{height:100%;background:var(--bark);border-radius:3px;transition:width .5s ease}
+
+  /* SYNC BADGE */
+  .sync-badge{font-family:'DM Mono',monospace;font-size:11px;padding:5px 11px;border-radius:6px;
+    border:1px solid;cursor:default;white-space:nowrap;transition:all .3s}
+  .sync-ok{background:rgba(74,103,65,.3);color:#9CC87A;border-color:rgba(74,103,65,.5)}
+  .sync-saving{background:rgba(196,168,130,.2);color:var(--bark);border-color:rgba(196,168,130,.4)}
+  .sync-error{background:rgba(163,45,45,.2);color:#E88080;border-color:rgba(163,45,45,.4)}
+
+  /* FILTERS */
+  .filters{padding:13px 32px;display:flex;gap:7px;flex-wrap:wrap;background:var(--parchment);
+    border-bottom:1px solid var(--bark);align-items:center}
+  .filter-label{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-right:4px}
+  .filter-btn{font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:500;
+    padding:5px 12px;border-radius:20px;border:1.5px solid var(--bark);background:transparent;
+    color:var(--muted);cursor:pointer;transition:all .15s}
+  .filter-btn:hover{background:var(--cream);color:var(--ink)}
+  .filter-btn.active{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+  .sep{width:1px;height:20px;background:var(--bark);opacity:.4;margin:0 4px}
+
+  /* MAIN */
+  main{padding:24px 32px 56px;max-width:1100px;margin:0 auto}
+
+  /* PHASE BLOCK */
+  .phase-block{margin-bottom:24px;border-radius:12px;overflow:hidden;
+    border:1px solid rgba(139,111,71,.2);background:#fff;transition:box-shadow .2s}
+  .phase-block:hover{box-shadow:0 4px 20px rgba(30,26,20,.07)}
+  .phase-header{padding:13px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;
+    user-select:none;border-bottom:1px solid rgba(139,111,71,.12)}
+  .phase-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .phase-name{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink);flex:1}
+  .phase-week-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);
+    background:var(--parchment);padding:3px 8px;border-radius:4px}
+  .phase-prog{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);min-width:36px;text-align:right}
+  .phase-chevron{font-size:12px;color:var(--muted);transition:transform .2s}
+  .phase-chevron.open{transform:rotate(180deg)}
+  .phase-progress-bar{height:3px;background:var(--parchment)}
+  .phase-progress-fill{height:100%;transition:width .4s ease}
+  .task-list{display:none}
+  .task-list.open{display:block}
+
+  /* SYNC ROW */
+  .sync-row{padding:10px 20px;background:#FFF8ED;border-top:1px dashed var(--bark);
+    display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--earth);
+    font-family:'DM Mono',monospace}
+
+  /* TASK ROW */
+  .task-row{border-top:1px solid rgba(139,111,71,.08);transition:background .12s}
+  .task-row.hidden{display:none}
+  .task-top{padding:11px 20px;display:flex;align-items:flex-start;gap:12px;cursor:pointer}
+  .task-top:hover{background:#FAFAF7}
+
+  .task-check{width:18px;height:18px;min-width:18px;border-radius:5px;
+    border:1.5px solid var(--bark);display:flex;align-items:center;justify-content:center;
+    margin-top:1px;transition:all .15s;font-size:11px;color:transparent;flex-shrink:0}
+  .task-row.done .task-check{background:var(--moss);border-color:var(--moss);color:#fff}
+  .task-row.in-progress .task-check{background:var(--prog-bg);border-color:var(--prog-text);color:var(--prog-text)}
+  .task-row.blocked .task-check{background:var(--blk-bg);border-color:var(--blk-text);color:var(--blk-text)}
+
+  .task-body{flex:1;min-width:0}
+  .task-text{font-size:13.5px;color:var(--ink);line-height:1.45;transition:opacity .15s}
+  .task-row.done .task-text{text-decoration:line-through;opacity:.4}
+  .task-meta{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center}
+
+  .badge{font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap}
+  .badge-dev{background:#E1F5EE;color:#085041}
+  .badge-mkt{background:#EEEDFE;color:#3C3489}
+  .badge-week{background:var(--parchment);color:var(--muted)}
+  .badge-blocked{background:var(--blk-bg);color:var(--blk-text)}
+
+  .task-actions{display:flex;align-items:flex-start;gap:8px;flex-shrink:0;margin-top:1px}
+
+  .task-status-btn{font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--bark);background:transparent;color:var(--muted);cursor:pointer;
+    white-space:nowrap;transition:all .15s}
+  .task-status-btn:hover{background:var(--parchment)}
+  .task-row.done .task-status-btn{background:var(--done-bg);color:var(--done-text);border-color:var(--done-text)}
+  .task-row.in-progress .task-status-btn{background:var(--prog-bg);color:var(--prog-text);border-color:var(--prog-text)}
+  .task-row.blocked .task-status-btn{background:var(--blk-bg);color:var(--blk-text);border-color:var(--blk-text)}
+
+  .desc-toggle-btn{font-family:'DM Mono',monospace;font-size:11px;padding:4px 8px;border-radius:6px;
+    border:1px solid rgba(139,111,71,.35);background:transparent;color:var(--muted);cursor:pointer;
+    white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:4px}
+  .desc-toggle-btn:hover{background:var(--parchment);color:var(--ink)}
+  .desc-arrow{display:inline-block;transition:transform .2s;font-size:9px}
+  .desc-arrow.open{transform:rotate(180deg)}
+
+  /* EXPANDABLE PANEL */
+  .task-panel{display:none;border-top:1px solid rgba(139,111,71,.1);background:#FDFCFA}
+  .task-panel.open{display:flex;gap:0}
+
+  .panel-desc{flex:1;padding:14px 20px 14px 50px;border-right:1px solid rgba(139,111,71,.12)}
+  .panel-desc-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+  .panel-desc-text{font-size:12.5px;color:#3A3529;line-height:1.65}
+
+  .panel-comments{width:280px;min-width:220px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+  .panel-comments-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em}
+  .comment-textarea{width:100%;min-height:80px;resize:vertical;border:1px solid rgba(139,111,71,.3);
+    border-radius:7px;padding:9px 10px;font-family:'Instrument Sans',sans-serif;font-size:12.5px;
+    color:var(--ink);background:#fff;line-height:1.5;transition:border-color .15s;outline:none}
+  .comment-textarea:focus{border-color:var(--earth)}
+  .comment-textarea::placeholder{color:rgba(122,112,96,.5)}
+  .comment-saved{font-size:10px;font-family:'DM Mono',monospace;color:var(--moss);
+    opacity:0;transition:opacity .3s;margin-top:2px}
+  .comment-saved.show{opacity:1}
+
+  /* EMPTY */
+  .empty-state{text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;display:none}
+  .empty-state.show{display:block}
+
+  @media(max-width:700px){
+    header{padding:16px}
+    .filters{padding:10px 14px}
+    main{padding:14px 10px 56px}
+    .phase-header,.task-top{padding:10px 12px}
+    .panel-desc{padding:12px 14px 12px 36px}
+    .task-panel{flex-direction:column}
+    .panel-desc{border-right:none;border-bottom:1px solid rgba(139,111,71,.12)}
+    .panel-comments{width:100%;padding:12px 14px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>🌿 Tierra Adentro</h1>
+    <p>Plan de acción · Fases 1–4</p>
+  </div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">Hechas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="global-bar-wrap">
+      <div class="global-bar-label">
+        <span>Progreso</span><span id="stat-pct">0%</span>
+      </div>
+      <div class="global-bar">
+        <div class="global-bar-fill" id="global-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <span class="sync-badge sync-ok" id="sync-badge">✓ Guardado</span>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Filtrar:</span>
+  <button class="filter-btn active" onclick="setFilter('all',this)">Todas</button>
+  <button class="filter-btn" onclick="setFilter('pending',this)">Pendientes</button>
+  <button class="filter-btn" onclick="setFilter('in-progress',this)">En progreso</button>
+  <button class="filter-btn" onclick="setFilter('done',this)">Completadas</button>
+  <button class="filter-btn" onclick="setFilter('blocked',this)">Bloqueadas</button>
+  <div class="sep"></div>
+  <button class="filter-btn" onclick="setFilter('dev',this)">Solo Dev</button>
+  <button class="filter-btn" onclick="setFilter('mkt',this)">Solo Marketing</button>
+</div>
+
+<main id="main-content">
+  <div class="empty-state" id="empty-state">No hay tareas que coincidan con este filtro.</div>
+</main>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const phases = [
+  {
+    id:'f1', name:'Fase 1 — Setup e instalación', color:'#4A6741',
+    weeks:'Semana 1',
+    sync:'Sync S1 — Confirmar: hosting activo, licencias en mano y entorno local funcionando. Sin esto no arranca la Fase 2.',
+    tasks:[
+      { id:'f1t1', who:'dev', week:'S1', blocked:false,
+        text:'Levantar entorno local (Docker o Laragon) para desarrollo paralelo al hosting',
+        desc:'Configurar un entorno de desarrollo local en tu Mac Mini M4 usando Docker Desktop o Laragon. Esto permite trabajar y probar cambios sin tocar el hosting real. Instala WordPress localmente con la misma versión de PHP que el servidor de producción (8.0+). Así puedes desarrollar offline y luego subir los cambios.' },
+      { id:'f1t2', who:'dev', week:'S1', blocked:true,
+        text:'Instalar WordPress en hosting y configurar ajustes base (zona horaria, idioma, permalinks)',
+        desc:'Una vez que el hosting esté activo, instalar WordPress desde el panel de control (cPanel o Plesk). Configurar: zona horaria en America/Bogota, idioma en español, estructura de URLs amigable (Ajustes → Enlaces permanentes → Nombre de entrada). Cambiar el nombre del sitio a "Tierra Adentro". Eliminar posts y páginas de ejemplo que vienen por defecto.' },
+      { id:'f1t3', who:'dev', week:'S1', blocked:true,
+        text:'Instalar Astra + Spectra y crear estructura de páginas vacías',
+        desc:'Instalar el tema Astra desde el repositorio de WordPress. Luego instalar el plugin Spectra (antes Ultimate Addons for Gutenberg) para los bloques avanzados. Crear las páginas vacías que formarán la estructura del sitio: Inicio, Habitaciones, Reservar, FAQ, Sobre Nosotros y Contacto. Asignar el menú de navegación principal.' },
+      { id:'f1t4', who:'dev', week:'S1', blocked:true,
+        text:'Instalar plugins gratuitos: User Role Editor, WT Waitlist, Dope Studio Business Reviews Lite',
+        desc:'Instalar los tres plugins gratuitos desde el repositorio oficial de WordPress. User Role Editor permitirá crear los 5 roles personalizados en la Fase 3. WT Waitlist gestionará la lista de espera cuando una habitación no tenga disponibilidad. Dope Studio Business Reviews Lite mostrará las reseñas de Google Maps. Activar los tres y verificar que no haya conflictos entre ellos.' },
+      { id:'f1t5', who:'dev', week:'S1', blocked:true,
+        text:'Configurar plugin de caché (LiteSpeed o W3 Total Cache) y CDN Cloudflare',
+        desc:'Instalar y activar el plugin de caché según el tipo de servidor del hosting contratado (LiteSpeed Cache si el servidor es LiteSpeed, W3 Total Cache para Apache/Nginx). Crear una cuenta gratuita en Cloudflare y apuntar el dominio a sus nameservers para activar la CDN. Esto acelera la carga para visitantes desde Europa (el público objetivo). Importante: excluir las páginas de checkout y reservas del caché para evitar errores en los formularios.' },
+      { id:'f1t6', who:'mkt', week:'S1', blocked:false,
+        text:'Gestionar con el cliente la compra del hosting y dominio (VPS mínimo 4GB RAM, PHP 8.0+)',
+        desc:'Coordinar con Constanza o Johan la contratación del hosting. El brief especifica un VPS o Cloud con mínimo 4GB RAM y 2 CPUs — el hosting compartido básico no es suficiente para la lógica del plugin de encuestas. Opciones recomendadas para Colombia: Hostinger VPS (buena relación precio/rendimiento) o DigitalOcean. Verificar que el plan incluya PHP 8.0+, certificado SSL gratuito y que los webhooks entrantes no estén bloqueados por el firewall. El dominio puede comprarse en el mismo proveedor o en uno separado como Namecheap.' },
+      { id:'f1t7', who:'mkt', week:'S1', blocked:false,
+        text:'Confirmar con el cliente compra de licencias premium (MotoPress bundle completo + Survey Maker AYS Pro)',
+        desc:'Las licencias premium son responsabilidad del cliente, no están incluidas en el presupuesto de desarrollo. Confirmar con Constanza que va a adquirir: (1) MotoPress Hotel Booking en su versión de pago incluyendo los add-ons Notifier, Payment Request y Checkout Fields — este bundle es el núcleo del sistema de reservas. (2) Survey Maker by AYS Pro con suscripción anual (~69–99 USD/año) para el sistema NPS con lógica condicional. Sin estas licencias en mano no puede arrancar la Fase 2 ni la Fase 3.' },
+      { id:'f1t8', who:'mkt', week:'S1', blocked:false,
+        text:'Verificar que Google Business Profile de Tierra Adentro esté activo y obtener el Place ID',
+        desc:'El plugin Dope Studio Business Reviews necesita el Google Place ID del negocio para conectarse a las reseñas. Verificar que el perfil de Google Business Profile de Tierra Adentro esté publicado y activo (no en modo borrador). Para obtener el Place ID: buscar "Tierra Adentro" en Google Maps, hacer clic en el negocio y buscar el parámetro "place_id" en la URL, o usar la herramienta Place ID Finder de Google. Anotar el Place ID para entregarlo al dev en la Fase 4.' },
+    ]
+  },
+  {
+    id:'f2', name:'Fase 2 — Motor de reservas', color:'#534AB7',
+    weeks:'Semana 2',
+    sync:'Sync S2 — Demo del flujo de reserva completo: desde la búsqueda de disponibilidad hasta el correo de confirmación. Si el pago no funciona, Fase 3 no arranca.',
+    tasks:[
+      { id:'f2t1', who:'dev', week:'S2', blocked:true,
+        text:'Instalar MotoPress Hotel Booking (licencia del cliente) y activar add-ons Notifier + Payment Request + Checkout Fields',
+        desc:'Una vez que el cliente tenga la licencia activa de MotoPress Hotel Booking, instalar el plugin principal y los tres add-ons incluidos en el bundle. Notifier gestiona los correos automáticos de confirmación, recordatorio y check-out. Payment Request permite enviar solicitudes de pago manuales. Checkout Fields añade campos personalizados al formulario de reserva. Activar los cuatro y hacer una primera configuración básica para verificar que no hay conflictos.' },
+      { id:'f2t2', who:'dev', week:'S2', blocked:false,
+        text:'Configurar acomodaciones: 11 habitaciones con tipos, capacidades, fotos y tarifas base',
+        desc:'En el panel de MotoPress, crear las acomodaciones según el brief: habitación privada suite con baño en suite, habitación privada estándar con baño compartido, cama en dormitorio mixto (4 camas), cama en dormitorio femenino (4 camas). Subir las fotos correspondientes de cada tipo. Configurar las tarifas base por noche en USD. Configurar las restricciones de estancia mínima (15 noches) y máxima (90 noches) por tipo de habitación.' },
+      { id:'f2t3', who:'dev', week:'S2', blocked:false,
+        text:'Configurar temporadas y tarifas dinámicas: alta (jun–ago, dic–ene) vs resto del año',
+        desc:'En MotoPress → Tarifas de temporada, crear dos períodos: temporada alta (junio–agosto y diciembre–enero) con las tarifas premium del brief, y temporada regular para el resto del año con las tarifas base. Las tarifas del brief están en USD. Verificar que el calendario de disponibilidad muestre correctamente los cambios de precio según la temporada.' },
+      { id:'f2t4', who:'dev', week:'S2', blocked:false,
+        text:'Integrar Stripe y PayPal: cobro del 30% al reservar, 70% antes de llegada vía Payment Request',
+        desc:'Activar el add-on Payment Request de MotoPress. Configurar Stripe: crear cuenta (o conectar la existente del cliente), generar las API keys (pública y secreta) en modo live, y pegarlas en MotoPress → Pagos → Stripe. Repetir para PayPal. Configurar la política de cobro: depósito del 30% automático al confirmar la reserva; el 70% restante se gestiona manualmente vía Payment Request cuando se acerque la fecha de llegada. Hacer una reserva de prueba con tarjeta de test para verificar el flujo.' },
+      { id:'f2t5', who:'dev', week:'S2', blocked:false,
+        text:'Configurar crypto (BTC/ETH/USDT) vía NOW Payments como tercer canal de pago',
+        desc:'Crear cuenta en NOWPayments.io (el cliente puede usar su propio correo). En el dashboard de NOW Payments, ir a Store Settings → API Key y copiar la clave. Instalar el plugin oficial de NOW Payments para WordPress o usar la integración manual vía webhook. Configurar las monedas aceptadas: BTC, ETH, USDT. Conectar con MotoPress como método de pago adicional. Hacer una prueba en la sandbox de NOW Payments antes de activar en producción.' },
+      { id:'f2t6', who:'dev', week:'S2', blocked:false,
+        text:'Configurar Checkout Fields: añadir campos propósito de estancia, país de origen y cómo nos conoció',
+        desc:'Con el add-on Checkout Fields de MotoPress activo, agregar los campos personalizados al formulario de reserva: (1) Propósito de estancia — dropdown con opciones trabajo remoto, nómada digital, retiro personal, turismo, otro. (2) País de origen — campo de texto o dropdown de países. (3) ¿Cómo nos conoció? — dropdown con Instagram, Coliving.com, Google, referido, otro. Estos campos son opcionales pero recomendados para el equipo de marketing. Verificar que se guarden correctamente en cada reserva.' },
+      { id:'f2t7', who:'dev', week:'S2', blocked:false,
+        text:'Configurar WT Waitlist en habitaciones: activar lista de espera cuando no hay disponibilidad',
+        desc:'Con WT Waitlist instalado, activar la integración con MotoPress Hotel Booking. Configurar el plugin para que cuando una habitación no tenga disponibilidad en las fechas solicitadas, aparezca el formulario de lista de espera en lugar del botón de reserva. El formulario debe pedir: nombre, correo, fechas deseadas. Configurar el correo de notificación al equipo cuando alguien se una a la lista de espera. Verificar el flujo bloqueando manualmente la disponibilidad de una habitación.' },
+      { id:'f2t8', who:'dev', week:'S2', blocked:false,
+        text:'Configurar correos automáticos de MotoPress Notifier: confirmación, recordatorio 7 días antes, check-out',
+        desc:'Con el add-on Notifier de MotoPress, configurar los tres correos automáticos del brief. Correo de confirmación (inmediato): asunto "¡Reserva confirmada en Tierra Adentro!", con el resumen de la reserva, el monto del depósito cobrado, instrucciones de llegada y el número de WhatsApp de Claudia. Recordatorio pre-arrival (7 días antes): asunto "Tu llegada a Tierra Adentro se acerca", con el pack logístico completo (cómo llegar desde Bogotá, qué traer, horario de check-in). Correo post-stay (1 día después del check-out): con el link a la encuesta NPS que se configura en la Fase 3.' },
+      { id:'f2t9', who:'mkt', week:'S2', blocked:false,
+        text:'Definir política de cancelación, penalizaciones y redactar los textos legales para la web',
+        desc:'El brief menciona una política de cancelación con penalizaciones pero no la detalla. Marketing debe definir con Constanza la política completa: plazos de cancelación sin penalización (ej. hasta 30 días antes), penalización por cancelación tardía (ej. pérdida del depósito del 30%), política en caso de no-show, y cómo manejar cancelaciones por fuerza mayor. Redactar los textos legales en inglés y español para la página de Política de Cancelación del sitio y para incluirlos en el correo de confirmación.' },
+    ]
+  },
+  {
+    id:'f3', name:'Fase 3 — Experiencia y operaciones', color:'#185FA5',
+    weeks:'Semanas 3–4',
+    sync:'Sync S3/S4 — Revisión de todos los flujos de huésped: reserva → correos → check-in → encuesta NPS. Aprobar textos de correos y formulario.',
+    tasks:[
+      { id:'f3t1', who:'dev', week:'S3', blocked:false,
+        text:'Crear 5 roles personalizados con User Role Editor: Guest, Long-term Guest, Host (Claudia), Manager (Constanza), Admin',
+        desc:'Con User Role Editor, crear los cinco roles del brief. Guest: puede ver su reserva y llenar el formulario de check-in. Long-term Guest: mismo que Guest más acceso a recursos exclusivos para estancias largas. Host (Claudia): puede ver todas las reservas activas, gestionar check-ins y enviar mensajes a huéspedes. Manager (Constanza): acceso completo a reservas, pagos y reportes, pero sin acceso al panel de administración de WordPress. Admin: acceso total. Asignar los permisos específicos a cada rol según el brief.' },
+      { id:'f3t2', who:'dev', week:'S3', blocked:false,
+        text:'Construir formulario de check-in digital con Spectra: datos personales, documento, info de llegada',
+        desc:'Crear el formulario de check-in usando los bloques de formulario de Spectra o un plugin de formularios compatible (Gravity Forms o WPForms si el cliente tiene licencia, o Contact Form 7 como alternativa gratuita). Campos requeridos según el brief: nombre completo, número de documento de identidad/pasaporte, fecha de nacimiento, país de origen, fecha y hora de llegada prevista, medio de transporte (bus/carro/avión), número de vuelo o bus (si aplica), necesidades especiales o alergias. El formulario debe enviarse por correo a Claudia y Constanza automáticamente al ser enviado.' },
+      { id:'f3t3', who:'dev', week:'S3', blocked:false,
+        text:'Crear página de recursos para huéspedes: guía local, recomendaciones, reglas de la casa (solo para roles Guest)',
+        desc:'Crear una página privada (acceso solo para roles Guest y Long-term Guest) con los recursos del brief: guía de llegada con instrucciones de transporte desde Bogotá, Tunja y Sogamoso; mapa del área con atracciones cercanas (Lago de Tota, Termales de Iza, Firavitoba, Pesca); reglas de la casa en inglés y español; horarios de comidas y servicios comunes; información sobre actividades disponibles. Esta página no debe ser indexada por Google (agregar noindex en el SEO de la página).' },
+      { id:'f3t4', who:'dev', week:'S3', blocked:false,
+        text:'Integrar formulario de check-in con MotoPress: vincular al perfil de reserva del huésped',
+        desc:'Vincular el formulario de check-in digital con el sistema de reservas de MotoPress para que los datos del formulario queden asociados al registro de reserva del huésped. Si MotoPress no tiene una integración nativa para esto, usar un webhook o una integración vía Zapier/Make para pasar los datos del formulario a los campos de la reserva. Como mínimo, el formulario debe enviarse con el número de reserva como referencia para que Claudia pueda asociarlo manualmente.' },
+      { id:'f3t5', who:'dev', week:'S3', blocked:false,
+        text:'Crear dashboard básico para Claudia (Host): ver reservas activas del día, próximas llegadas, formularios de check-in',
+        desc:'Crear una vista de panel personalizada para el rol Host (Claudia) que le permita gestionar las operaciones del día a día sin necesidad de acceder al panel de administración completo de WordPress. La vista debe incluir: lista de huéspedes actuales con nombre, habitación y fecha de salida; próximas llegadas de los próximos 7 días con estado del formulario de check-in (enviado / pendiente); acceso rápido a los formularios de check-in recibidos; botón para enviar Payment Request a huéspedes con saldo pendiente. Puede implementarse con MotoPress Dashboard + User Role Editor o con una página personalizada.' },
+      { id:'f3t6', who:'dev', week:'S3', blocked:false,
+        text:'Configurar reporte mensual automático para Constanza: ocupación, ingresos, canales de reserva',
+        desc:'Configurar un reporte mensual automático que se envíe a Constanza (Manager) el primer día de cada mes. El reporte debe incluir: tasa de ocupación del mes anterior por tipo de habitación, ingresos totales y por canal de pago (Stripe, PayPal, crypto), número de reservas nuevas y cancelaciones, promedio de noches por reserva, y top 3 países de origen de huéspedes. MotoPress incluye reportes básicos — verificar qué datos exporta y complementar con un plugin de reportes o una exportación automática a Google Sheets si es necesario.' },
+      { id:'f3t7', who:'dev', week:'S4', blocked:true,
+        text:'Instalar Survey Maker AYS Pro y configurar las 6 preguntas NPS con lógica condicional por puntaje',
+        desc:'Con la licencia activa de Survey Maker AYS Pro, crear la encuesta de satisfacción con las 6 preguntas del brief (comodidad, comunicación con anfitrión, ubicación, limpieza, recomendación NPS, y pregunta abierta). Configurar la lógica condicional (Conditional Mailing): si puntaje 5 estrellas → enviar correo con enlace directo a Google Maps para dejar reseña + alerta a Claudia y Constanza; si 3–4 estrellas → correo con preguntas abiertas de mejora; si 1–2 estrellas → alerta inmediata a Constanza y Claudia para seguimiento manual.' },
+      { id:'f3t8', who:'dev', week:'S4', blocked:false,
+        text:'Conectar encuesta NPS con correo post-stay de MotoPress Notifier',
+        desc:'Editar el correo post-stay de MotoPress Notifier (configurado en la Fase 2) para incluir el enlace directo a la encuesta NPS de Survey Maker AYS Pro. El enlace debe ser personalizado con el nombre del huésped y el número de reserva para que Survey Maker pueda asociar la respuesta a la reserva correcta. Verificar que el correo se envíe correctamente 1 día después del check-out haciendo una reserva de prueba con fecha de check-out en el pasado.' },
+      { id:'f3t9', who:'dev', week:'S3', blocked:false,
+        text:'Configurar página de política de cancelación con los textos aprobados por Marketing',
+        desc:'Una vez que Marketing entregue los textos legales de la política de cancelación (tarea f2t9), crear la página en WordPress con el contenido en inglés y español. La página debe ser accesible desde el footer del sitio y desde el correo de confirmación de reserva. Incluir un resumen visual tipo tabla con los plazos y penalizaciones para facilitar la lectura. Esta página también debe estar enlazada desde el formulario de reserva de MotoPress (checkbox de aceptación de términos).' },
+      { id:'f3t10', who:'mkt', week:'S3', blocked:false,
+        text:'Definir con el cliente: número WhatsApp de Claudia, correo oficial y datos para pagos en efectivo',
+        desc:'Recopilar la información concreta que falta para completar los correos automáticos y el sitio web: número de WhatsApp de Claudia para el recordatorio logístico, dirección de correo oficial del proyecto (la que aparece como XXXXXXXXX@xxxxxxxxx.co en el brief), instrucciones exactas para pagos en efectivo (incluyendo la mención de la TRM del Banco de la República más $200 COP), y el enlace directo a Google Maps del negocio para la encuesta NPS.' },
+      { id:'f3t11', who:'mkt', week:'S3', blocked:false,
+        text:'Confirmar campos del formulario check-in con requisitos de Migración Colombia y Minturismo',
+        desc:'El brief menciona que los campos exactos del formulario de check-in se definirán según los requisitos de Migración Colombia y el Ministerio de Turismo para establecimientos de hospedaje. Investigar qué datos son obligatorios por ley para registrar huéspedes extranjeros (los datos básicos ya están en el brief: documento, nacimiento, país de origen). Confirmar con el cliente si necesitan campos adicionales como número de vuelo, ciudad de procedencia o propósito del viaje. Esta información define el formulario final que configura el dev.' },
+      { id:'f3t12', who:'mkt', week:'S4', blocked:false,
+        text:'Aprobar textos de todos los correos automáticos antes de que el dev los configure en MotoPress',
+        desc:'Revisar y aprobar con Constanza los textos de los tres correos automáticos antes de configurarlos en el sistema: (1) Correo de confirmación de reserva, (2) Recordatorio de llegada 7 días antes con el pack logístico completo, (3) Correo post-stay con el link a la encuesta NPS. Los textos deben estar en inglés (idioma principal del público objetivo europeo) con opción en español. Una vez aprobados, entregar al dev para configuración en MotoPress Notifier.' },
+    ]
+  },
+  {
+    id:'f4', name:'Fase 4 — Diseño y contenido', color:'#B05B2A',
+    weeks:'Semanas 4–5',
+    sync:'Sync S5 — Revisión visual conjunta del sitio con el cliente. Marketing lidera la presentación; Dev resuelve ajustes técnicos en vivo.',
+    tasks:[
+      { id:'f4t1', who:'dev', week:'S4', blocked:false,
+        text:'Construir diseño completo en Astra + Spectra: paleta beige/clara, mobile-first, orientado a conversión',
+        desc:'Diseñar y maquetar todas las páginas del sitio usando Astra como tema base y Spectra para los bloques de contenido. La paleta debe ser beige/clara (nada de fondos oscuros) según la preferencia del cliente. El diseño debe estar orientado a convertir visitantes en leads: CTA de reserva visible above the fold, social proof (reseñas) bien posicionado, y flujo claro hacia el formulario de reservas. Priorizar la vista móvil porque el público europeo navegará desde el teléfono. El estilo visual debe transmitir tranquilidad, naturaleza y slow living.' },
+      { id:'f4t2', who:'dev', week:'S4', blocked:false,
+        text:'Implementar sección FAQ con soporte multimedia: 10 preguntas + videos, fotos, embeds de Instagram',
+        desc:'Crear la sección de FAQ con las 10 preguntas mínimas del brief. Cada pregunta debe tener: texto de respuesta (2–3 frases) y al menos un elemento multimedia de soporte. El formato puede ser acordeón nativo de WordPress o un bloque personalizado de Spectra. Para los embeds de Instagram, usar el bloque embed de WordPress que soporta URLs de Instagram directamente. Para videos de YouTube o Vimeo, embed estándar. Verificar que todos los embeds sean responsivos y carguen correctamente en móvil sin afectar el rendimiento de la página.' },
+      { id:'f4t3', who:'dev', week:'S5', blocked:false,
+        text:'Integrar Dope Studio Business Reviews: shortcode en página, 20 reseñas visibles, filtro mínimo 4 estrellas',
+        desc:'Con el Place ID y el API token de Apify listos (entregados por Marketing), configurar Dope Studio Business Reviews Lite: pegar el Apify API token, el Google Place ID, establecer frontend display limit en 20, min rating filter en 4 estrellas (solo reseñas positivas), cron frequency en semanal, y max reviews per fetch en 5. Insertar el shortcode del plugin en la página de inicio o en una sección dedicada de reseñas. Verificar que las reseñas se muestren correctamente en slider o grid según el diseño.' },
+      { id:'f4t4', who:'dev', week:'S5', blocked:false,
+        text:'Configurar Apify + Place ID en Dope Studio y conectar con Google Business Profile del cliente',
+        desc:'Apify actúa como intermediario para obtener las reseñas de Google Maps sin necesidad de una API key de pago de Google Cloud. El dev recibe de Marketing el API token de la cuenta Apify del cliente y el Place ID del Google Business Profile. Pegar ambos en la configuración del plugin Dope Studio y hacer una primera carga manual de reseñas para verificar que el sistema funcione. A partir de ahí el WP-Cron actualizará automáticamente cada semana.' },
+      { id:'f4t5', who:'dev', week:'S5', blocked:false,
+        text:'Agregar botón a Coliving.com con target="_blank" en la sección de opciones de pago',
+        desc:'En la página de reservas o en la sección de opciones de pago, agregar un botón o enlace que redirija al listing de Tierra Adentro en Coliving.com. El atributo target="_blank" es obligatorio para que el enlace abra en una nueva pestaña y el usuario no abandone el sitio propio. El texto del botón debe ser claro: algo como "También puedes reservar en Coliving.com". Este es el tercer canal de pago (externo, no integrado en pasarela).' },
+      { id:'f4t6', who:'mkt', week:'S4', blocked:false,
+        text:'Recopilar y entregar todo el material multimedia para las 10 FAQs del brief',
+        desc:'El brief especifica el material multimedia sugerido para cada FAQ. Marketing debe conseguir y entregar al dev: video o captura de speed test de internet (FAQ 2), mapa y video del trayecto desde Sogamoso (FAQ 3), gráfico de temperaturas de Boyacá (FAQ 4), galería del Lago de Tota, termales de Iza, Firavitoba y Pesca (FAQ 5), infografía o video de habitación y áreas comunes (FAQ 6), captura del proceso de pago Bitcoin (FAQ 7), link a Migración Colombia (FAQ 8), video de cocina con productos locales (FAQ 9), y link a la política de cancelación (FAQ 10). Para la FAQ 1 (seguridad Boyacá), buscar el link a la noticia sobre Iza como el pueblo más seguro de Colombia.' },
+      { id:'f4t7', who:'mkt', week:'S4', blocked:false,
+        text:'Gestionar acceso al Instagram de Tierra Adentro para obtener los embed codes de publicaciones clave',
+        desc:'Identificar las publicaciones de Instagram de Tierra Adentro que servirán como soporte visual para las FAQs y otras secciones del sitio. Para obtener el embed code de una publicación en Instagram: abrir la publicación en el navegador, hacer clic en los tres puntos → Insertar. Copiar el código HTML o simplemente la URL de la publicación (WordPress puede hacer el embed automáticamente con la URL). Entregar al dev las URLs o códigos de las publicaciones seleccionadas para cada FAQ correspondiente.' },
+      { id:'f4t8', who:'mkt', week:'S4', blocked:false,
+        text:'Escribir copys de la página: hero, habitaciones, áreas comunes, propuesta de valor y CTAs',
+        desc:'Redactar todos los textos del sitio web orientados al público objetivo: downshifters europeos de 38–48 años que buscan slow living rural. El hero debe capturar la esencia del coliving en una o dos frases. La descripción de habitaciones debe enfocarse en la experiencia, no solo en los metros cuadrados. Las CTAs deben ser directas y transmitir escasez o exclusividad (11 habitaciones, estancias mínimas de 15 días). Todos los textos deben estar en inglés y español, ya que el público objetivo es europeo. Obtener aprobación de Constanza antes de entregar al dev.' },
+      { id:'f4t9', who:'mkt', week:'S4', blocked:false,
+        text:'Crear cuenta gratuita en Apify (sin tarjeta de crédito) y entregar el API token al dev',
+        desc:'Apify tiene un plan gratuito suficiente para el volumen de reseñas de Tierra Adentro. Crear la cuenta en apify.com con el correo del cliente (o uno del proyecto). Una vez dentro, ir a Settings → Integrations → API token y copiar el token. Entregarlo al dev de forma segura junto con el Google Place ID. La cuenta gratuita de Apify permite un número limitado de llamadas al mes — con la frecuencia semanal y el límite de 5 reseñas por fetch configurado en Dope Studio, el plan gratuito es más que suficiente.' },
+      { id:'f4t10', who:'mkt', week:'S5', blocked:false,
+        text:'Verificar que el Google Business Profile tenga reseñas reales cargadas antes de conectar el plugin',
+        desc:'Dope Studio Business Reviews solo mostrará reseñas que ya existan en el Google Business Profile de Tierra Adentro. Si el perfil es nuevo o tiene pocas reseñas, el plugin no tendrá contenido que mostrar. Verificar con Constanza cuántas reseñas tiene actualmente el perfil. Si tiene menos de 5–6 reseñas, considerar hacer una campaña rápida con huéspedes anteriores para conseguir algunas antes del lanzamiento. El filtro está configurado para mostrar solo reseñas de 4 y 5 estrellas, así que solo esas cuentan.' },
+    ]
+  }
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let taskStates   = {};
+let taskComments = {};
+let currentFilter = 'all';
+let saveTimer = null;
+
+function setSyncBadge(state) {
+  const b = document.getElementById('sync-badge');
+  if (!b) return;
+  b.className = 'sync-badge';
+  if (state === 'saving') { b.classList.add('sync-saving'); b.textContent = '⟳ Guardando…'; }
+  if (state === 'ok')     { b.classList.add('sync-ok');     b.textContent = '✓ Guardado'; }
+  if (state === 'error')  { b.classList.add('sync-error');  b.textContent = '✕ Error al guardar'; }
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('/state');
+    const d = await res.json();
+    taskStates   = d.states   || {};
+    taskComments = d.comments || {};
+    setSyncBadge('ok');
+  } catch(e) {
+    taskStates   = {};
+    taskComments = {};
+    setSyncBadge('error');
+  }
+  buildUI();
+}
+
+async function saveData() {
+  setSyncBadge('saving');
+  try {
+    await fetch('/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ states: taskStates, comments: taskComments })
+    });
+    setSyncBadge('ok');
+  } catch(e) {
+    setSyncBadge('error');
+  }
+}
+
+function debouncedSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveData, 600);
+}
+
+const CYCLE = ['pending','in-progress','done','blocked'];
+const STATUS_LABEL = { pending:'Pendiente', 'in-progress':'En progreso', done:'Completado', blocked:'Bloqueado' };
+const STATUS_ICON  = { pending:'○', 'in-progress':'◑', done:'✓', blocked:'✕' };
+
+function cycleStatus(taskId) {
+  const cur = taskStates[taskId] || 'pending';
+  const idx = CYCLE.indexOf(cur);
+  taskStates[taskId] = CYCLE[(idx+1) % CYCLE.length];
+  debouncedSave();
+  buildUI();
+}
+
+function saveComment(taskId, val) {
+  taskComments[taskId] = val;
+  debouncedSave();
+  const el = document.getElementById('csaved-'+taskId);
+  if (el) { el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1500); }
+}
+
+function toggleDesc(taskId) {
+  const panel = document.getElementById('panel-'+taskId);
+  const arrow  = document.getElementById('arrow-'+taskId);
+  panel.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function togglePhase(id) {
+  document.getElementById('list-'+id).classList.toggle('open');
+  document.getElementById('chev-'+id).classList.toggle('open');
+}
+
+// ── BUILD UI ──────────────────────────────────────────────────────────────────
+function buildUI() {
+  const main = document.getElementById('main-content');
+  [...main.children].forEach(c => { if(c.id !== 'empty-state') c.remove(); });
+
+  let totalAll = 0, doneAll = 0;
+
+  phases.forEach(phase => {
+    const phaseDone = phase.tasks.filter(t => (taskStates[t.id]||'pending') === 'done').length;
+    const phasePct  = Math.round(phaseDone / phase.tasks.length * 100);
+    totalAll += phase.tasks.length;
+    doneAll  += phaseDone;
+
+    const block = document.createElement('div');
+    block.className = 'phase-block';
+    block.id = 'block-'+phase.id;
+    block.innerHTML = `
+      <div class="phase-header" onclick="togglePhase('${phase.id}')">
+        <div class="phase-dot" style="background:${phase.color}"></div>
+        <span class="phase-name">${phase.name}</span>
+        <span class="phase-week-badge">${phase.weeks}</span>
+        <span class="phase-prog">${phaseDone}/${phase.tasks.length}</span>
+        <span class="phase-chevron open" id="chev-${phase.id}">▼</span>
+      </div>
+      <div class="phase-progress-bar">
+        <div class="phase-progress-fill" style="background:${phase.color};width:${phasePct}%"></div>
+      </div>
+      <div class="task-list open" id="list-${phase.id}"></div>
+    `;
+    main.insertBefore(block, document.getElementById('empty-state'));
+
+    const list = block.querySelector('#list-'+phase.id);
+
+    phase.tasks.forEach(task => {
+      const status  = taskStates[task.id] || (task.blocked ? 'blocked' : 'pending');
+      const comment = taskComments[task.id] || '';
+
+      const row = document.createElement('div');
+      row.className = `task-row ${status}`;
+      row.id = 'row-'+task.id;
+      row.dataset.who    = task.who;
+      row.dataset.status = status;
+
+      const whoBadge = task.who === 'dev'
+        ? '<span class="badge badge-dev">Dev</span>'
+        : '<span class="badge badge-mkt">Marketing</span>';
+      const blkBadge = task.blocked
+        ? '<span class="badge badge-blocked">🔴 Bloqueador</span>' : '';
+
+      row.innerHTML = `
+        <div class="task-top" onclick="cycleStatus('${task.id}')">
+          <div class="task-check">${STATUS_ICON[status]}</div>
+          <div class="task-body">
+            <div class="task-text">${task.text}</div>
+            <div class="task-meta">${whoBadge}<span class="badge badge-week">${task.week}</span>${blkBadge}</div>
+          </div>
+          <div class="task-actions" onclick="event.stopPropagation()">
+            <button class="desc-toggle-btn" onclick="toggleDesc('${task.id}')">
+              Info <span class="desc-arrow" id="arrow-${task.id}">▼</span>
+            </button>
+            <button class="task-status-btn" onclick="cycleStatus('${task.id}')">${STATUS_LABEL[status]}</button>
+          </div>
+        </div>
+        <div class="task-panel" id="panel-${task.id}">
+          <div class="panel-desc">
+            <div class="panel-desc-label">¿Qué se hace en esta tarea?</div>
+            <div class="panel-desc-text">${task.desc}</div>
+          </div>
+          <div class="panel-comments">
+            <div class="panel-comments-label">Comentarios</div>
+            <textarea class="comment-textarea" id="ta-${task.id}"
+              placeholder="Agrega notas, links, obstáculos o avances..."
+              onclick="event.stopPropagation()"
+              oninput="saveComment('${task.id}', this.value)">${comment}</textarea>
+            <div class="comment-saved" id="csaved-${task.id}">✓ Guardado</div>
+          </div>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    const sync = document.createElement('div');
+    sync.className = 'sync-row';
+    sync.innerHTML = `<span style="font-size:14px;flex-shrink:0">🔄</span><span>${phase.sync}</span>`;
+    list.appendChild(sync);
+  });
+
+  updateGlobal(doneAll, totalAll);
+  applyFilter(currentFilter);
+}
+
+function updateGlobal(done, total) {
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('stat-done').textContent  = done;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-pct').textContent   = pct+'%';
+  document.getElementById('global-fill').style.width = pct+'%';
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(f);
+}
+
+function applyFilter(f) {
+  let any = false;
+  document.querySelectorAll('.task-row').forEach(row => {
+    const s = row.dataset.status, w = row.dataset.who;
+    let show = true;
+    if (f==='pending')     show = s==='pending';
+    if (f==='in-progress') show = s==='in-progress';
+    if (f==='done')        show = s==='done';
+    if (f==='blocked')     show = s==='blocked';
+    if (f==='dev')         show = w==='dev';
+    if (f==='mkt')         show = w==='mkt';
+    row.classList.toggle('hidden', !show);
+    if(show) any = true;
+  });
+  document.getElementById('empty-state').classList.toggle('show', !any);
+}
+
+loadData();
+</script>
+</body>
+</html>
